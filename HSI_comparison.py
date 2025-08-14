@@ -432,7 +432,7 @@ class HyperspectralAnalyzer:
 # Main execution
 if __name__ == "__main__":
     # Set the path to your image directory
-    image_directory = r"Z:\Documents\NASA_HSI\hyperspectral_pix2pix_W-NET\hyperspectral_pix2pix\results\rocks_flowers_2_pol0_v1\test_latest\images"
+    image_directory = r"Z:\HSP\results\hyperspectral_fruit_v1\test_latest\images"
     # Optional: Linux path alternative
     # image_directory = r"/uufs/chpc.utah.edu/common/home/u1528328/Documents/NASA_HSI/hyperspectral_pix2pix_W-NET/hyperspectral_pix2pix/results/hyperspectral_new_bottleneck_45_degree/test_latest/images"
     
