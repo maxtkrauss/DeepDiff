@@ -14,6 +14,8 @@
 
 
 # Run the testing script
-python test.py --dataroot /scratch/general/nfs1/u1528328/img_dir/objects_4-24/fruit/processed_fruit_4-24 --name hyperspectral_fruit_v1 --checkpoints_dir /scratch/general/nfs1/u1528328/model_dir/W-NET_models/checkpoints_hyperspectral_fruit_v1 --model pix2pix --input_nc 1 --output_nc 106 --netG unet_1024 --netG_reps 2 --netD_mult 0 --polarization 0
+python test.py --dataroot /scratch/general/nfs1/u1528328/img_dir/mkrauss/William_Summer --name hyperspectral_william_8-14 --checkpoints_dir /scratch/general/nfs1/u1528328/model_dir/W-NET_models/checkpoints_hyperspectral_william_8-14 --model pix2pix --input_nc 1 --output_nc 106 --netG unet_1024 --netG_reps 2 --netD_mult 0 --polarization 0
 
-#python test.py --dataroot /scratch/general/nfs1/u1528328/img_dir/banknotes --name hyperspectral_banknotes_b_no_mask --checkpoints_dir /scratch/general/nfs1/u1528328/model_dir/W-NET_models/checkpoints_hyperspectral_banknotes_b_no_mask --model pix2pix --input_nc 1 --output_nc 106 --netG unet_1024 --netG_reps 2 --netD_mult 0 --polarization 0
+python test.py --dataroot /scratch/general/nfs1/u1528328/img_dir/mkrauss/fruit --name hyperspectral_fruit_8-14 --checkpoints_dir /scratch/general/nfs1/u1528328/model_dir/W-NET_models/checkpoints_hyperspectral_fruit_8-14 --model pix2pix --input_nc 1 --output_nc 106 --netG unet_1024 --netG_reps 2 --netD_mult 0 --polarization 0
+
+python test.py --dataroot /scratch/general/nfs1/u1528328/img_dir/mkrauss/banknotes --name hyperspectral_banknotes_8-14_v2 --checkpoints_dir /scratch/general/nfs1/u1528328/model_dir/W-NET_models/checkpoints_hyperspectral_banknotes_8-14_v2 --model pix2pix --input_nc 1 --output_nc 106 --netG unet_1024 --netG_reps 2 --netD_mult 0 --polarization 0

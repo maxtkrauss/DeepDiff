@@ -110,9 +110,9 @@ class AlignedDataset(BaseDataset):
         #A = np.clip(A - thorlabs_dark_cropped, 0, None)  # Subtract & threshold negative values to 0
         #B = np.clip(B - cubert_dark_cropped, 0, None)    # Subtract & threshold
 
-        # **Normalize images**
-        A = (A - A.min()) / (A.max() - A.min()) if A.max() > A.min() else A
-        B = (B - B.min()) / (B.max() - B.min()) if B.max() > B.min() else B
+        # Normalize to [0, 1]
+        A = A / 4095
+        B = B / 4095
 
 
         # Select desired polarization channel

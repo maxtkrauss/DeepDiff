@@ -281,12 +281,8 @@ class Pix2PixModel(BaseModel):
         # combine loss and calculate gradients old
         self.loss_G = ((self.loss_G_3D_SSIM * 100) + self.loss_G_SC + (self.loss_G_GAN * 0.01) + self.loss_G_L1)
 
-
-
         # self.loss_G = self.loss_G_GAN + self.loss_G_spatial + (self.loss_G_3D_SSIM*100) + self.loss_G_SC #+ self.loss_G_MAE
         self.loss_G.backward()
-
-    
     
     def optimize_parameters(self):
         self.forward()                   # compute fake images: G(A)

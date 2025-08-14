@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 # List of image paths
 image_paths = [
-    r"D:\objects_4-24\processed_fruit_videos\polarized3\validation\thorlabs\frame_0671.tif", # Fruit 1
+    r"D:\objects_4-24\processed_fruit_videos\polarized1\validation\thorlabs\frame_0000.tif", # Fruit 1
     r"D:\objects_4-24\processed_fruit_videos\polarized2\validation\thorlabs\frame_0403.tif", # Fruit 2
     r"D:\objects_4-24\processed_fruit_videos\polarized3\validation\thorlabs\frame_0649.tif", # Fruit 3
 ]
@@ -56,6 +56,10 @@ plt.show()
 
 
 
+# each image in this folder is a 5-channel tiff frame. I want to take each frame, compute the DoLP and AoLP, and then reconstruct the video of the entire folder in a DoLP and AoLP video.# The first 4 channels are the polarization channels (0, 45, 90, 135 degrees), and the 5th channel is the intensity channel.
+# The DoLP is computed as sqrt((I0 - I90)^2 + (I45 - I135)^2) / (I0 + I90)
+# The AoLP is computed as 0.5 * arctan2(I45 - I135, I0 - I90)
+# Save the DoLP and AoLP videos as separate files.
 # Folder containing the TIFF frames
 folder = r"D:\objects_4-24\processed_fruit_videos\polarized1\validation\thorlabs"
 
