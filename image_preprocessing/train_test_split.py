@@ -60,8 +60,8 @@ def split_paired_dataset(cubert_dir, thorlabs_dir, output_base, train_ratio=0.8,
     print(f"[DONE] Dataset split complete in {total_elapsed:.1f} sec")
 
 if __name__ == "__main__":
-    cubert_dir = r"/scratch/general/nfs1/u1528328/img_dir/mkrauss/fruit/processed_fruit_4-24/augmented/cubert"
-    thorlabs_dir = r"/scratch/general/nfs1/u1528328/img_dir/mkrauss/fruit/processed_fruit_4-24/augmented/thorlabs"
-    output_base = r"/scratch/general/nfs1/u1528328/img_dir/mkrauss/fruit/processed_fruit_4-24/split"
+    cubert_dir = r"/scratch/general/nfs1/u1528328/img_dir/mkrauss/banknotes_raw/cubert"
+    thorlabs_dir = r"/scratch/general/nfs1/u1528328/img_dir/mkrauss/banknotes_raw/thorlabs"
+    output_base = r"/scratch/general/nfs1/u1528328/img_dir/mkrauss/banknotes_raw/split"
 
     split_paired_dataset(cubert_dir, thorlabs_dir, output_base, train_ratio=0.8, seed=42)

@@ -31,7 +31,8 @@ def HSI2RGB(wY,HSI,ydim,xdim,d,threshold):
 
     
     # Load reference illuminant
-    D = spio.loadmat(r'Z:\HSP\RGB\D_illuminants.mat')
+    # D = spio.loadmat(r'Z:\HSP\RGB\D_illuminants.mat')
+    D = spio.loadmat(r'/uufs/chpc.utah.edu/common/home/u1528328/HSP/RGB/D_illuminants.mat')
     w = D['wxyz'][:,0]
     x = D['wxyz'][:,1]
     y = D['wxyz'][:,2]

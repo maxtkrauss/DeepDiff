@@ -122,9 +122,35 @@ class Pix2PixModel(BaseModel):
             opt (Option class)-- stores all the experiment flags; needs to be a subclass of BaseOptions
         """
         BaseModel.__init__(self, opt)
+
+        # Load loss gains from opt if available, otherwise use defaults
+        self.lambda_3d_ssim = getattr(opt, 'lambda_3d_ssim', 100.0)
+        self.lambda_sc = getattr(opt, 'lambda_sc', 1.0)
+        self.lambda_gan = getattr(opt, 'lambda_gan', 0.01)
+        self.lambda_l1 = getattr(opt, 'lambda_l1', 1.0)
+
+        # after you read self.lambda_* from opt:
+        self.auto_lambda = getattr(opt, 'auto_lambda', False)
+        if self.auto_lambda:
+            # Create learnable log-variances for each base loss (start near log(1))
+            self.loss_log_sigma_L1 = torch.nn.Parameter(torch.zeros(1, device=self.device))
+            self.loss_log_sigma_SSIM3D = torch.nn.Parameter(torch.zeros(1, device=self.device))
+            self.loss_log_sigma_SC = torch.nn.Parameter(torch.zeros(1, device=self.device))
+            self.loss_log_sigma_Grad = torch.nn.Parameter(torch.zeros(1, device=self.device))
+
+            # Create a parameter list to hold these parameters
+            self.auto_lambda_params = torch.nn.ParameterList([
+                self.loss_log_sigma_L1,
+                self.loss_log_sigma_SSIM3D,
+                self.loss_log_sigma_SC,
+                self.loss_log_sigma_Grad
+            ])
+
         # specify the training losses you want to print out. The training/test scripts will call <BaseModel.get_current_losses>
         # add G_NLL
         self.loss_names = ['G_GAN', 'G_L1', 'G_SC', 'G_3D_SSIM', 'D_real', 'D_fake']
+        if self.auto_lambda:
+            self.loss_names.extend(['log_sigma_L1', 'log_sigma_SSIM3D', 'log_sigma_SC', 'log_sigma_Grad'])
         # specify the images you want to save/display. The training/test scripts will call <BaseModel.get_current_visuals>
         self.visual_names = ['real_A', 'fake_B', 'real_B']
         # specify the models you want to save to the disk. The training/test scripts will call <BaseModel.save_networks> and <BaseModel.load_networks>
@@ -163,7 +189,11 @@ class Pix2PixModel(BaseModel):
             # self.criterionNLL = laplace_pdf 
 
             # initialize optimizers; schedulers will be automatically created by function <BaseModel.setup>.
-            self.optimizer_G = torch.optim.Adam(self.netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
+            optimizer_params = list(self.netG.parameters())
+            if self.auto_lambda:
+                # Add the auto lambda parameters to the generator optimizer
+                optimizer_params.extend(self.auto_lambda_params)
+            self.optimizer_G = torch.optim.Adam(optimizer_params, lr=opt.lr, betas=(opt.beta1, 0.999))
             self.optimizer_D = torch.optim.Adam(self.netD.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
             self.optimizers.append(self.optimizer_G)
             self.optimizers.append(self.optimizer_D)
@@ -248,40 +278,40 @@ class Pix2PixModel(BaseModel):
 
     def backward_G(self):
         """Calculate GAN and L1 loss for the generator"""
-        # First, G(A) should fake the discriminator
-        #fake_AB = torch.cat((self.real_A, self.fake_B), 1)
-        # Calculate and combine GAN loss, L1 loss, and NLL loss using only the mean channel.
         fake_AB = torch.cat((self.real_A_resized, self.fake_B), 1)
-
-        # fake_AB = torch.cat((self.real_A, self.fake_B), 1)
         pred_fake = self.netD(fake_AB)
         self.loss_G_GAN = self.criterionGAN(pred_fake, True)
-        #self.loss_G_GAN = 0
-        # Second, G(A) = B
-        #self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
-        # use only the mean part of real_B of mean and scale
-        #print(f'fake mean shape{self.fake_mean.shape}')
-        #print(f'real mean shape{self.real_B.shape}')
-
-        self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) #* self.opt.lambda_L1
-
-        # Spectral Loss Component
-        self.loss_G_SC = spectral_correlation_loss(self.real_B, self.fake_B) # factor of ten taken out *10
-        # 3D SSIM Loss Component
+        self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B)
+        self.loss_G_SC = spectral_correlation_loss(self.real_B, self.fake_B)
         self.loss_G_3D_SSIM = ssim_3d_loss(self.real_B, self.fake_B)
-        # MAE Loss Component
         self.loss_G_MAE = mae_3d_loss(self.real_B, self.fake_B)
 
-        # Spatial Consistency Component
-        # Spatial consistency loss between input diffracted image and mean of generated HSI
-        # self.loss_G_spatial = spatial_consistency_loss(self.fake_B, self.real_A)
+        if self.auto_lambda:
+            # Uncertainty weighting (Kendall et al.)
+            loss = 0
+            # L1
+            loss += (torch.exp(-self.loss_log_sigma_L1) * self.loss_G_L1 + self.loss_log_sigma_L1)
+            # 3D SSIM
+            loss += (torch.exp(-self.loss_log_sigma_SSIM3D) * self.loss_G_3D_SSIM + self.loss_log_sigma_SSIM3D)
+            # Spectral Correlation
+            loss += (torch.exp(-self.loss_log_sigma_SC) * self.loss_G_SC + self.loss_log_sigma_SC)
+            # GAN
+            loss += (torch.exp(-self.loss_log_sigma_Grad) * self.loss_G_GAN + self.loss_log_sigma_Grad)
+            self.loss_G = loss
+            
+            # Store sigma values for logging (detach to avoid affecting gradients)
+            self.loss_log_sigma_L1_val = self.loss_log_sigma_L1.detach()
+            self.loss_log_sigma_SSIM3D_val = self.loss_log_sigma_SSIM3D.detach()
+            self.loss_log_sigma_SC_val = self.loss_log_sigma_SC.detach()
+            self.loss_log_sigma_Grad_val = self.loss_log_sigma_Grad.detach()
+        else:
+            self.loss_G = (
+                (self.loss_G_3D_SSIM * self.lambda_3d_ssim)
+                + (self.loss_G_SC * self.lambda_sc)
+                + (self.loss_G_GAN * self.lambda_gan)
+                + (self.loss_G_L1 * self.lambda_l1)
+            )
 
-        # self.loss_G =  (self.loss_G_3D_SSIM * 100) + self.loss_G_SC
-
-        # combine loss and calculate gradients old
-        self.loss_G = ((self.loss_G_3D_SSIM * 100) + self.loss_G_SC + (self.loss_G_GAN * 0.01) + self.loss_G_L1)
-
-        # self.loss_G = self.loss_G_GAN + self.loss_G_spatial + (self.loss_G_3D_SSIM*100) + self.loss_G_SC #+ self.loss_G_MAE
         self.loss_G.backward()
     
     def optimize_parameters(self):

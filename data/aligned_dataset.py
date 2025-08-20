@@ -54,6 +54,7 @@ class AlignedDataset(BaseDataset):
         self.polarization = opt.polarization
         self.video_mode = opt.video_mode
         self.GT_upsample = opt.GT_upsample
+        self.norm_bitwise = opt.norm_bitwise
 
     def __getitem__(self, index):
         """Return a data point and its metadata information.
@@ -111,8 +112,12 @@ class AlignedDataset(BaseDataset):
         #B = np.clip(B - cubert_dark_cropped, 0, None)    # Subtract & threshold
 
         # Normalize to [0, 1]
-        A = A / 4095
-        B = B / 4095
+        if self.norm_bitwise:
+            A = A / 4095
+            B = B / 4095
+        else:
+            A = (A - A.min()) / (A.max() - A.min() + 1e-8)
+            B = (B - B.min()) / (B.max() - B.min() + 1e-8)
 
 
         # Select desired polarization channel
@@ -164,8 +169,7 @@ class AlignedDataset(BaseDataset):
         #A = F.interpolate(A, size=(1024, 1024), mode='bilinear', align_corners=False) # Resize to 120x120
         A = A.squeeze(0)  # Remove batch dimension
 
-        # print(f'A shape: {A.shape}') # Diffractogram
-        # print(f'B shape: {B.shape}') # Ground-Truth
+        # print(f"Final A shape: {A.shape}, Final B shape: {B.shape}")
 
         #print(f'A_paths: {A_path} B_paths: {B_path}')
         # print(A.shape)

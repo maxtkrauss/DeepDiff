@@ -44,6 +44,13 @@ class BaseOptions():
         parser.add_argument('--polarization', type=int, default=0, help='linear polarization used from input diffractogram')
         parser.add_argument("--video_mode", type=bool, default=False, help='sets dummy groundtruth for video generation')
         parser.add_argument("--GT_upsample", type=bool, default=False, help='Upsamples output reconstruction in the spatial domain')
+        parser.add_argument('--lambda_3d_ssim', type=float, default=100.0, help='weight for 3D SSIM loss component')
+        parser.add_argument('--lambda_sc', type=float, default=1.0, help='weight for SC loss component')
+        parser.add_argument('--lambda_gan', type=float, default=0.01, help='weight for GAN loss component')
+        parser.add_argument('--lambda_l1', type=float, default=1.0, help='weight for L1 loss component')
+        # Add the auto_lambda argument here since it's only used during training
+        parser.add_argument('--auto_lambda', action='store_true', help='if specified, use auto lambda tuning')
+        parser.add_argument('--norm_bitwise', action='store_true', help='if specified, normalize each image by its bit range instead of the dataset min/max')
 
         # dataset parameters
         parser.add_argument('--dataset_mode', type=str, default='unaligned', help='chooses how datasets are loaded. [unaligned | aligned | single | colorization]')
