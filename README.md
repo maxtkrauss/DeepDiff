@@ -1,3 +1,4 @@
+
 <div align="center">
     <h1>DiffuserNET</h1>
     <h3>Hyperspectral Polarimetric Image Reconstruction</h3>
@@ -5,15 +6,35 @@
     <img src="https://img.shields.io/badge/License-MIT-green" alt="license">
 </div>
 
+<p align="center">
+    <b>System Schematic:</b><br>
+    <img src="figures/github_schem.png" alt="System schematic" width="600">
+</p>
 
 
-DiffuserNET is a machine learning framework for reconstructing hyperspectral images from single-shot, linearly polarized, greyscale images acquired through a diffuser. It leverages a U-Net-based generator and adversarial training to learn the mapping from a compressed, spatially-mixed input (the scatterogram) to a high-dimensional hyperspectral output, using both spectral and polarization information.
+
+
+
+DiffuserNET is a machine learning framework for reconstructing hyperspectral images from single-shot, linearly polarized, greyscale images acquired through a diffuser. The figure above illustrates the core idea: a scene is imaged through a diffuser, producing a spatially-mixed scatterogram, which is then used to reconstruct the full hyperspectral and polarimetric information of the scene.
 
 
 **Input:** (5, 660, 660) multi-channel tiff from the "thorlabs" camera (4 linear polarizations + unpolarized). Spectral info is spatially mixed by a diffuser.
 **Output:** (106, 128, 128) or (106, 660, 660) hyperspectral cube, each channel a wavelength (450–850nm, 4nm steps), matching "cubert" ground truth.
 **Goal:** Reconstruct the full hyperspectral cube from a single compressed input, for each polarization channel.
 
+
+**Implementation:** Based on the [pix2pix GAN framework](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix) with custom losses and dataloader. See `models/pix2pix_model.py`, `models/networks.py`, and `data/aligned_dataset.py` for details.
+
+## Model & Training Pipeline
+
+### How the Generator and Discriminator Work
+
+DiffuserNET uses a U-Net generator and PatchGAN discriminator, trained adversarially to reconstruct hyperspectral images from compressed, single-polarization greyscale inputs:
+
+- **Generator (U-Net):** Receives a single polarization channel (shape: (1, 660, 660)), decodes the spatially mixed spectral information, and outputs a hyperspectral cube (shape: (106, 128, 128)). Trained to produce outputs close to ground truth (L1, SSIM, spectral correlation losses) and realistic (adversarial loss).
+- **Discriminator (PatchGAN):** Receives the concatenation of the (resized) input and either the real or generated hyperspectral cube, and learns to distinguish real (input + ground truth) from fake (input + generated) pairs, providing feedback to the generator.
+- **Training:** The generator tries to fool the discriminator, while the discriminator tries to correctly identify real vs. generated pairs. The adversarial loss encourages realism, while other losses ensure spectral and spatial accuracy. Four separate models are trained, one for each polarization channel.
+- **Testing & Evaluation:** After training, the model is evaluated on unseen validation images. Reconstructions are saved to `results/<dataset_name>/validation_latest/images/`, and quantitative metrics (SSIM, MSE, MAE, RASE, spectral fidelity, etc.) are computed and saved as `metrics.csv` (see `HSI_comparison.py`).
 
 ## Data Organization
 
@@ -37,30 +58,13 @@ Your data directory should be structured as follows:
             ...
 ```
 
-- **thorlabs/**: (5, 660, 660) tiff images (greyscale, 4 polarizations + unpolarized)
+- **thorlabs/**: (5, 660, 660) tiff images (greyscale, 4 polarizations + unprocessed)
 - **cubert/**: (106, 120, 120) tiff images (hyperspectral ground truth)
 - Images are paired by index (e.g., `image_0_thorlabs.tif` and `image_0_cubert.tif`)
 
-
-## Model & Training Pipeline
-
-### How the Generator and Discriminator Work
-
-DiffuserNET uses a U-Net generator and PatchGAN discriminator, trained adversarially to reconstruct hyperspectral images from compressed, single-polarization greyscale inputs:
-
-- **Generator (U-Net):** Receives a single polarization channel (shape: (1, 660, 660)), decodes the spatially mixed spectral information, and outputs a hyperspectral cube (shape: (106, 128, 128)). Trained to produce outputs close to ground truth (L1, SSIM, spectral correlation losses) and realistic (adversarial loss).
-- **Discriminator (PatchGAN):** Receives the concatenation of the (resized) input and either the real or generated hyperspectral cube, and learns to distinguish real (input + ground truth) from fake (input + generated) pairs, providing feedback to the generator.
-- **Training:** The generator tries to fool the discriminator, while the discriminator tries to correctly identify real vs. generated pairs. The adversarial loss encourages realism, while other losses ensure spectral and spatial accuracy. Four separate models are trained, one for each polarization channel.
-- **Testing & Evaluation:** After training, the model is evaluated on unseen validation images. Reconstructions are saved to `results/<dataset_name>/validation_latest/images/`, and quantitative metrics (SSIM, MSE, MAE, RASE, spectral fidelity, etc.) are computed and saved as `metrics.csv` (see `HSI_comparison.py`).
-
-## Model & Training Pipeline
-
-
 ---
-**Implementation:** Based on the [pix2pix GAN framework](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix) with custom losses and dataloader. See `models/pix2pix_model.py`, `models/networks.py`, and `data/aligned_dataset.py` for details.
 
-
-## Environment Setup (CHPC)
+## Environment Setup (CHPC or related cluster)
 
 1. **Clone the repository:**
    ```bash
@@ -117,6 +121,7 @@ python test.py \
 - Repeat for each polarization (0, 45, 90, 135).
 
 
+
 ## Evaluation
 
 After testing, evaluate results with:
@@ -124,6 +129,13 @@ After testing, evaluate results with:
 python HSI_comparison.py --results_dir results/<dataset_name>/validation_latest/images
 ```
 This script computes SSIM, MSE, MAE, RASE, spectral fidelity, and other metrics, saving them to `metrics.csv`.
+
+<p align="center">
+    <b>Example Output and ROI Spectral Comparison:</b><br>
+    <img src="figures/github_ex.png" alt="Example output and ROI spectra" width="700">
+</p>
+
+The figure above shows an example scatterogram input, the ground truth and reconstructed hyperspectral frames, and three regions of interest (ROIs). For each ROI, the ground truth and reconstructed spectra at that pixel are compared, demonstrating the model's ability to recover spectral information.
 
 **Visualization:**
 Both `HSI_comparison.py` (for CHPC) and `HSI_comparison_local.py` (for local use) also provide an interactive visualization tool. This allows you to visually inspect (wavelengths & sRGB) and compare the reconstructed and ground truth hyperspectral images, explore spectra at individual pixels, and better understand model performance beyond summary metrics.
