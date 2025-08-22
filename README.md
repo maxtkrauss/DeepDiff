@@ -11,16 +11,17 @@
     <img src="figures/github_schem.png" alt="System schematic" width="600">
 </p>
 
+DiffuserNET is a machine learning framework for reconstructing hyperspectral images from single-shot, linearly polarized, greyscale images acquired through a diffuser. The figure above illustrates the core idea: a scene is imaged polarimetrically through a diffuser, producing a spatially-mixed polarized scatterogram, which is then used to reconstruct the full hyperspectral information of the scene.
 
 
-
-
-DiffuserNET is a machine learning framework for reconstructing hyperspectral images from single-shot, linearly polarized, greyscale images acquired through a diffuser. The figure above illustrates the core idea: a scene is imaged through a diffuser, producing a spatially-mixed scatterogram, which is then used to reconstruct the full hyperspectral and polarimetric information of the scene.
-
-
-**Input:** (5, 660, 660) multi-channel tiff from the "thorlabs" camera (4 linear polarizations + unpolarized). Spectral info is spatially mixed by a diffuser.
-**Output:** (106, 128, 128) or (106, 660, 660) hyperspectral cube, each channel a wavelength (450–850nm, 4nm steps), matching "cubert" ground truth.
-**Goal:** Reconstruct the full hyperspectral cube from a single compressed input, for each polarization channel.
+- **Input:** (5, 660, 660) multi-channel diffusive image from the polarimetric camera:
+    - 4 linear polarization channels
+    - 1 unprocessed channel
+    - Spectral information is spatially mixed by a diffuser
+- **Output:** Hyperspectral cube:
+    - (106, 128, 128)
+    - Each channel corresponds to a wavelength (450–850nm, 4nm steps), matching "cubert" ground truth
+- **Goal:** Reconstruct the full hyperspectral polarimetric image cube from a single compressed input
 
 
 **Implementation:** Based on the [pix2pix GAN framework](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix) with custom losses and dataloader. See `models/pix2pix_model.py`, `models/networks.py`, and `data/aligned_dataset.py` for details.
@@ -34,7 +35,7 @@ DiffuserNET uses a U-Net generator and PatchGAN discriminator, trained adversari
 - **Generator (U-Net):** Receives a single polarization channel (shape: (1, 660, 660)), decodes the spatially mixed spectral information, and outputs a hyperspectral cube (shape: (106, 128, 128)). Trained to produce outputs close to ground truth (L1, SSIM, spectral correlation losses) and realistic (adversarial loss).
 - **Discriminator (PatchGAN):** Receives the concatenation of the (resized) input and either the real or generated hyperspectral cube, and learns to distinguish real (input + ground truth) from fake (input + generated) pairs, providing feedback to the generator.
 - **Training:** The generator tries to fool the discriminator, while the discriminator tries to correctly identify real vs. generated pairs. The adversarial loss encourages realism, while other losses ensure spectral and spatial accuracy. Four separate models are trained, one for each polarization channel.
-- **Testing & Evaluation:** After training, the model is evaluated on unseen validation images. Reconstructions are saved to `results/<dataset_name>/validation_latest/images/`, and quantitative metrics (SSIM, MSE, MAE, RASE, spectral fidelity, etc.) are computed and saved as `metrics.csv` (see `HSI_comparison.py`).
+- **Testing & Evaluation:** After training, the model is evaluated on unseen validation images. Test reconstructions are saved to `results/<dataset_name>/validation_latest/images/`, and quantitative metrics (SSIM, MSE, MAE, RASE, spectral fidelity, etc.) are computed and saved as `metrics.csv` (see `HSI_comparison.py`).
 
 ## Data Organization
 
@@ -118,9 +119,7 @@ python test.py \
 ```
 
 - Replace `<dataset_root>`, `<experiment_name>`, and `<checkpoint_dir>` as needed.
-- Repeat for each polarization (0, 45, 90, 135).
-
-
+- Repeat for each polarization (0, 45, 90, 135) or utilize batch_train_test.py
 
 ## Evaluation
 
@@ -130,6 +129,9 @@ python HSI_comparison.py --results_dir results/<dataset_name>/validation_latest/
 ```
 This script computes SSIM, MSE, MAE, RASE, spectral fidelity, and other metrics, saving them to `metrics.csv`.
 
+**Visualization:**
+Both `HSI_comparison.py` (for CHPC) and `HSI_comparison_local.py` (for local use) also provide an interactive visualization tool. This allows you to visually inspect (wavelengths & sRGB) and compare the reconstructed and ground truth hyperspectral images, explore spectra at individual pixels, and better understand model performance beyond summary metrics.
+
 <p align="center">
     <b>Example Output and ROI Spectral Comparison:</b><br>
     <img src="figures/git_ex.png" alt="Example output and ROI spectra" width="700"><br>
@@ -137,10 +139,6 @@ This script computes SSIM, MSE, MAE, RASE, spectral fidelity, and other metrics,
         Example visualization: The top row shows the scatterogram input, ground truth, and reconstructed hyperspectral frames. Three regions of interest (ROIs) are highlighted, with plots comparing the ground truth and reconstructed spectra at each ROI. The figure also includes sRGB reconstructions (using the HSI_comparison script) for visual comparison in standard color space.
     </i>
 </p>
-
-
-**Visualization:**
-Both `HSI_comparison.py` (for CHPC) and `HSI_comparison_local.py` (for local use) also provide an interactive visualization tool. This allows you to visually inspect (wavelengths & sRGB) and compare the reconstructed and ground truth hyperspectral images, explore spectra at individual pixels, and better understand model performance beyond summary metrics.
 
 
 ## File Reference
@@ -158,9 +156,12 @@ Both `HSI_comparison.py` (for CHPC) and `HSI_comparison_local.py` (for local use
 - Model checkpoints and large data should be stored on `/scratch` for speed; code and results can be kept in your home directory (`/uufs`/Z:).
 - The project is designed for reproducibility: all scripts, environment files, and data conventions are included here.
 
-
 ## Citation
-If you use this code or data, please cite the original authors and this repository.
+
+If you use this code or data, please cite the original authors and this repository. For the associated research paper, please use the following placeholder citation until the official publication is available:
+
+> Max T. Krauss, Jakob Damman, William Walker, Al Ingold, Apratim Majumder, Rajesh Menon. "Diffuser-based Hyperspectral Imaging with Polarimetric Angular Sensing." (Manuscript in preparation, 2025).
+
 
 ---
 
