@@ -1,0 +1,5 @@
+# Ignore training log files
+training_job_*.log
+testing_job_*.log
+*_job_*.log
+results/
