@@ -132,10 +132,12 @@ This script computes SSIM, MSE, MAE, RASE, spectral fidelity, and other metrics,
 
 <p align="center">
     <b>Example Output and ROI Spectral Comparison:</b><br>
-    <img src="figures/github_ex.png" alt="Example output and ROI spectra" width="700">
+    <img src="figures/git_ex.png" alt="Example output and ROI spectra" width="700"><br>
+    <i>
+        Example visualization: The top row shows the scatterogram input, ground truth, and reconstructed hyperspectral frames. Three regions of interest (ROIs) are highlighted, with plots comparing the ground truth and reconstructed spectra at each ROI. The figure also includes sRGB reconstructions (using the HSI_comparison script) for visual comparison in standard color space.
+    </i>
 </p>
 
-The figure above shows an example scatterogram input, the ground truth and reconstructed hyperspectral frames, and three regions of interest (ROIs). For each ROI, the ground truth and reconstructed spectra at that pixel are compared, demonstrating the model's ability to recover spectral information.
 
 **Visualization:**
 Both `HSI_comparison.py` (for CHPC) and `HSI_comparison_local.py` (for local use) also provide an interactive visualization tool. This allows you to visually inspect (wavelengths & sRGB) and compare the reconstructed and ground truth hyperspectral images, explore spectra at individual pixels, and better understand model performance beyond summary metrics.
