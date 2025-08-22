@@ -18,11 +18,9 @@ DiffuserNET is a machine learning framework for reconstructing hyperspectral ima
     - 4 linear polarization channels
     - 1 unprocessed channel
     - Spectral information is spatially mixed by a diffuser
-- **Output:** Polarized Hyperspectral cube:
-    - (106, 128, 128)
+- **Output:** (106, 128, 128) polarized hyperspectral cube:
     - Each channel corresponds to a wavelength (450–850nm, 4nm steps), matching "cubert" ground truth
 - **Goal:** Reconstruct the full hyperspectral polarimetric image cube from a single compressed polarimetric input
-
 
 **Implementation:** Based on the [pix2pix GAN framework](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix) with custom losses and dataloader. See `models/pix2pix_model.py`, `models/networks.py`, and `data/aligned_dataset.py` for details.
 
